@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>GitHub Commits</title>
+    <script src="https://unpkg.com/vue"></script>
+	<style>
+		#demo {
+		    font-family: "Helvetica", Arial, sans-serif;
+		  }
+		  a {
+		    text-decoration: none;
+		    color: #f66;
+		  }
+		  li {
+		    line-height: 1.5em;
+		    margin-bottom: 20px;
+		  }
+		  .author,
+		  .date {
+		    font-weight: bold;
+		  }
+	</style>
+  </head>
+  <body>
+    <div id="demo">
+      <h1>Latest Commits</h1>
+      <!-- radio单选框 -->
+      <template v-for="branch in branches">
+        <input
+          type="radio"
+          :id="branch"
+          :value="branch"
+          name="branch"
+          v-model="currentBranch"      
+        /> <!-- v-model绑定选择项从而获取选择哪个分支 -->
+        <label :for="branch">{{ branch }}</label>  
+      </template>
+      
+      <p>@{{ currentBranch }}</p>
+      <ul>
+		  <div v-for="record in commits">
+        <li v-if="record.commit.author.name==currentBranch">
+			
+          <a :href="record.html_url" target="_blank" class="commit"
+            >{{ record.sha }}</a  <!-- 原模板arrayObject.slice(start,end)选择sha前7位 sha即安全散列算法，对应commit内容，有点区块链浏览器那个意思-->
+          >
+          - <span class="message">{{ record.commit.message | truncate }}</span <!-- truncate获取第一行感觉没有啥用-->
+          ><br />
+          by
+          <span class="author"
+            ><a :href="record.author.html_url" target="_blank"
+              >{{ record.commit.author.name }}</a
+            ></span
+          >
+          at
+          <span class="date">{{ record.commit.author.date | formatDate }}</span>
+
+        </li>
+		</div>
+      </ul>
+	  </div>
+    </div>
+
+    <script>
+      var apiURL =
+        "https://api.github.com/repos/newsysuecnc/newsysuecnc/commits?";
+
+      /**
+       * Actual demo
+       */
+
+      var demo = new Vue({
+        el: "#demo",
+
+        data: {
+          branches: ["wavehh", "Alen462"],
+          currentBranch: "wavehh",
+          commits: null
+        },
+
+        created: function() {
+          this.fetchData();
+        },
+
+        watch: {
+          currentBranch: "fetchData" //currentBranch变化时进行fetchData方法
+        },
+
+        filters: {
+          truncate: function(v) { //必须有一个参数
+            var newline = v.indexOf("\n"); //第一次出现换行符的参数
+            return newline > 0 ? v.slice(0, newline) : v;
+          }, //实际上就是获取第一行
+          formatDate: function(v) {
+            return v.replace(/T|Z/g, " ");
+          }
+        },
+
+        methods: {
+          fetchData: function() {
+            var xhr = new XMLHttpRequest();
+            var self = this;
+            xhr.open("GET", apiURL + self.currentBranch);
+            xhr.onload = function() {
+              self.commits = JSON.parse(xhr.responseText); //将返回文本转换成对象，因此commit变成一个大数组，对其进行进一步的处理
+              //console.log(self.commits[0].html_url); 
+            };
+            xhr.send();
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
